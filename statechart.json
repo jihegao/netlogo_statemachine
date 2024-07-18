@@ -1,74 +1,35 @@
 {
-    "states":[
-        {
-            "state_name": "start",
-            "action": "",
-            "transfer_rules":[
-                {
-                    "condition_trigger": "\"true\"",
-                    "next_state": "search-for-chip"
-                }
-            ]
-        },
+    "states":
+    [
         {
             "state_name": "search-for-chip",
-            "action": "search-for-chip",
-            "transfer_rules":[
-                {
-                    "condition_trigger": "\"has-free-chip-here?\"",
-                    "next_state": "pick-up-chip"
-                }
-            ]
+            "trigger": "has-free-chip-here?",
+            "next_state": "pick-up-chip"
         },
         {
             "state_name": "pick-up-chip",
-            "action": "pick-up-chip",
-            "transfer_rules":[
-                {
-                    "condition_trigger": "time-after 5",
-                    "next_state": "find-new-pile"
-                }
-            ]
+            "trigger": "true",
+            "next_state": "find-new-pile"
         },
         {
             "state_name": "find-new-pile",
-            "action": "find-new-pile",
-            "transfer_rules":[
-                {
-                    "condition_trigger": "\"pcolor = yellow\"",
-                    "next_state": "find-place-to-put-down-chip"
-                }
-            ]
+            "trigger": "pcolor = yellow",
+            "next_state": "find-place-to-put-down-chip"
         },
         {
             "state_name": "find-place-to-put-down-chip",
-            "action": "find-place-to-put-down-chip",
-            "transfer_rules":[
-                {
-                    "condition_trigger": "\"is-empty-here?\"",
-                    "next_state": "put-down-chip"
-                }
-            ]
+            "trigger": "is-empty-here?",
+            "next_state": "put-down-chip"
         },
         {
             "state_name": "put-down-chip",
-            "action": "put-down-chip",
-            "transfer_rules":[
-                {
-                    "condition_trigger": "time-after 1",
-                    "next_state": "get-away"
-                }
-            ]
+            "trigger": "true",
+            "next_state": "get-away"
         },
         {
             "state_name": "get-away",
-            "action": "get-away",
-            "transfer_rules":[
-                {
-                    "condition_trigger": "\"pcolor = black\"",
-                    "next_state": "search-for-chip"
-                }
-            ]
+            "trigger": "pcolor = black",
+            "next_state": "search-for-chip"
         }
     ]
 }

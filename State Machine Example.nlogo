@@ -1,182 +1,86 @@
-__includes [ ]
-
-extensions [ table profiler ]
+extensions [ profiler ]
 
 turtles-own [
-  steps
-  current_state
+  next-task  ;; task the turtle will run during this tick
+  steps      ;; ...unless this number is greater than zero, in which
+             ;; case this tick, the turtle just moves forward 1
 ]
-
-
-
-globals [
-  states
-]
-
 
 to setup
   clear-all
-  reset-ticks
   set-default-shape turtles "bug"
   ;; randomly distribute wood chips
   ask patches [
-    if random 100 < density
+    if random-float 100 < density
       [ set pcolor yellow ]
   ]
-
-
-  set states table:get (table:from-json-file "statechart.json") "states"
-  foreach states [
-    s ->
-    ifelse (table:has-key? s "trigger_func")
-    [
-      let trigger_func table:get s "trigger_func"
-      table:put s "trigger_func" trigger_func
-    ]
-    [
-      let trigger table:get s "trigger"
-      table:put s "trigger" trigger
-    ]
+  ;; randomly distribute termites
+  create-turtles number [
+    set color white
+    setxy random-xcor random-ycor
+    set next-task [ -> search-for-chip ]
+    set size 5  ;; easier to see
   ]
-
-  create-turtles number [ __init__  ]
+  reset-ticks
 end
-
-
-to __init__
-  set color blue
-  set size 2
-  update-current-state "search-for-chip"
-  move-to one-of patches with [pcolor = black]
-end
-
-
 
 to go
-  ask turtles [
-    ifelse steps > 0
-    [ set steps steps - 1 ]
-    [ execute-state
-      wiggle
-    ]
-    fd 1
-  ]
+  ask turtles
+    [ ifelse steps > 0
+        [ set steps steps - 1 ]
+        [ run next-task
+          wiggle ]
+      fd 1 ]
   tick
 end
 
 to wiggle  ;; turtle procedure
-  lt random 50
   rt random 50
+  lt random 50
 end
 
-
-to search-for-chip   ;; turtle procedure
-end
-
-to-report has-free-chip-here?
-  report pcolor = yellow and not any? other turtles-here
-end
-
-to pick-up-chip     ;; "picks up chip" by turning orange
-  set pcolor black
-  set color orange
-  set steps 20
-end
-
-to find-new-pile  ;;  look for yellow patches
-
-end
-
-to find-place-to-put-down-chip  ;; finds empty spot
-
-end
-
-to-report is-empty-here?
-  report pcolor = black and not any? other turtles-here
-end
-
-to put-down-chip  ;;   drops chip
-  set pcolor yellow
-  set color white
-  set steps 20
-end
-
-to get-away  ;;   get out of yellow pile
-  wiggle
-end
-
-
-
-; ===================
-;    STATE MACHINE
-; ===================
-
-
-; turtle reporter
-to-report get_state [state_name]
-  report first filter [s -> table:get s "state_name" = state_name] states
-end
-
-
-to update-current-state [state_name]
-  let next_state (get_state state_name)
-  let trigger table:get next_state "trigger"
-  let next_state_name table:get next_state "next_state"
-
-  set current_state gen-func state_name trigger next_state_name
-  if show-logs? [
-    set label state_name_of current_state
-    show (word "enter state: " label ) ]
-end
-
-to-report gen-func [ state_name trigger next_state_name ]
-  report (runresult (word
-    "[ key -> "
-    "  ifelse-value ( key = \"trigger\" )[ " trigger " ]"
-    "  ["
-    "    ifelse-value (key = \"next_state\") [ \"" next_state_name "\" ] "
-    "    [ \""  state_name "\" ] "
-    "  ]"
-    "]"
-  ))
-end
-
-;;
-
-to execute-state
-  ; transfer to new state if any transfer rule is meet
-  let fulfilled (runresult current_state "trigger")
-  if fulfilled [
-    update-current-state (runresult current_state "next_state")
+to search-for-chip   ;; turtle procedure -- "picks up chip" by turning orange
+  if pcolor = yellow [
+    set pcolor black
+    set color orange
+    set steps 20
+    set next-task [ -> find-new-pile ]
   ]
-  run (runresult current_state "action")
+end
+
+to find-new-pile  ;; turtle procedure -- look for yellow patches
+  if pcolor = yellow
+    [ set next-task [ -> put-down-chip ] ]
+end
+
+to put-down-chip  ;; turtle procedure -- finds empty spot & drops chip
+  if pcolor = black
+   [ set pcolor yellow
+     set color white
+     set steps 20
+     set next-task [ -> get-away ] ]
+end
+
+to get-away  ;; turtle procedure -- get out of yellow pile
+  if pcolor = black
+    [ set next-task [ -> search-for-chip ] ]
 end
 
 
-
-to-report state_name_of [state]
-  report (runresult state "state_name")
-end
-
-to-report time-after [interval]
-  let it ifelse-value (is-string? interval)[read-from-string interval][interval]
-  report [ -> expired-at (ticks + it) ]
-end
-
-to-report expired-at [t]
-  report ticks >= t
-end
+; Public Domain:
+; To the extent possible under law, Uri Wilensky has waived all
+; copyright and related or neighboring rights to this model.
 @#$#@#$#@
 GRAPHICS-WINDOW
-150
+228
 10
-579
-440
+638
+421
 -1
 -1
-2.095
+2.0
 1
-8
+10
 1
 1
 1
@@ -195,46 +99,12 @@ ticks
 30.0
 
 BUTTON
-10
-15
-135
-48
-NIL
-setup\n
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
-BUTTON
-75
-145
-138
-178
-NIL
-go
-T
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
-BUTTON
-10
-145
-73
-178
-NIL
-go
+27
+116
+110
+149
+setup
+setup
 NIL
 1
 T
@@ -244,27 +114,16 @@ NIL
 NIL
 NIL
 1
-
-SWITCH
-10
-320
-137
-353
-show-logs?
-show-logs?
-1
-1
--1000
 
 SLIDER
-10
-75
-135
-108
+8
+39
+219
+72
 number
 number
-0
-500
+1
+1000
 400.0
 1
 1
@@ -272,25 +131,42 @@ NIL
 HORIZONTAL
 
 SLIDER
-10
-110
-135
-143
+8
+73
+219
+106
 density
 density
-0
-100
+0.0
+100.0
 20.0
+1.0
 1
-1
-NIL
+%
 HORIZONTAL
 
+BUTTON
+114
+116
+197
+149
+go
+go
+T
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+0
+
 MONITOR
-615
-25
-852
-70
+668
+29
+906
+74
 NIL
 count patches with [pcolor = yellow]
 17
@@ -300,23 +176,25 @@ count patches with [pcolor = yellow]
 @#$#@#$#@
 ## WHAT IS IT?
 
-An alternative implementation of the official model 'State Machine Example'. Use an external JSON file to define the bugs' statechart, and imported into a turtles-own statechart (a netlogo table or dictionary). 
+This shows how to make your turtles into "state machines" using a turtle variable and the RUN command.   A state machine consists of a collection of states with a different action associated with each state.  The model itself is an alternate version of the Termites model located in the Biology section of Sample Models.
 
-## HOW IT WORKS
+Termites is an unusual model in that it uses a turtle forever button; each turtle runs its code, out of synch with all the others.  This version of the model uses an observer forever button instead.  The state machine technique is necessary in order to code this model using an observer forever button.  (For more on turtle forever buttons see the Programming Guide in the NetLogo User Manual.)
 
-A state machine consists of state names, state behaviors, and transitions between states. We use key "name" to refer state name, key "action" to refer behaviors, and key "transfer_conditions" to refer transition rules.
+## THINGS TO NOTICE
 
-Actions are strings which are executable by run "run action", 
+Compare the code to the code in the main Termites model.  Which way of coding the model do you prefer...?
 
-## THINGS TO TRY
+Note that the behavior of this version of the model isn't absolutely identical to the behavior of the original model.  In this version, note that all the turtles begin white, then all turn red, then all turn back to white, and so forth.  Gradually the turtles drift out of synch with each other until the coordinated flashing no longer happens.  The main model exhibits the same effect, but in the main model, the turtles get out of synch with each other somewhat faster.  That's because the way time passes in the two models is a little different.  In this version, a turtle's "turn" consists of moving a step or changing tasks.  In the original version, a turtle's "turn" is smaller, and consists only of executing a single NetLogo command.
 
+## NETLOGO FEATURES
 
-
-## EXTENDING THE MODEL
-
-
+Note the use of the `task` primitive to create a command task to be run later with the `run` primitive.
 
 ## RELATED MODELS
+
+Termites
+
+<!-- 2007 -->
 @#$#@#$#@
 default
 true
@@ -374,13 +252,6 @@ Polygon -16777216 true false 162 80 132 78 134 135 209 135 194 105 189 96 180 89
 Circle -7500403 true true 47 195 58
 Circle -7500403 true true 195 195 58
 
-carrier4
-true
-0
-Polygon -7500403 false true 75 285 45 90 90 75 90 15 180 15 180 90 225 105 225 270 180 285 75 285
-Polygon -13791810 true false 135 135
-Polygon -7500403 true true 75 285 180 285 225 270 225 105 180 90 180 15 90 15 90 75 45 90 75 285 180 285
-
 circle
 false
 0
@@ -398,16 +269,6 @@ false
 Polygon -7500403 true true 200 193 197 249 179 249 177 196 166 187 140 189 93 191 78 179 72 211 49 209 48 181 37 149 25 120 25 89 45 72 103 84 179 75 198 76 252 64 272 81 293 103 285 121 255 121 242 118 224 167
 Polygon -7500403 true true 73 210 86 251 62 249 48 208
 Polygon -7500403 true true 25 114 16 195 9 204 23 213 25 200 39 123
-
-cylinder
-false
-0
-Circle -7500403 true true 0 0 300
-
-dot
-false
-0
-Circle -7500403 true true 90 90 120
 
 face happy
 false
@@ -485,11 +346,6 @@ line
 true
 0
 Line -7500403 true 150 0 150 300
-
-line half
-true
-0
-Line -7500403 true 150 0 150 150
 
 pentagon
 false
@@ -609,12 +465,7 @@ Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
 NetLogo 6.4.0
 @#$#@#$#@
-setup
-draw-countries
-make-city-turtles
-set num-citizens-to-create 5
-create-citizens-in-countries
-display-population-in-patches
+setup repeat 10000 [ go ]
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
@@ -630,5 +481,5 @@ true
 Line -7500403 true 150 150 90 180
 Line -7500403 true 150 150 210 180
 @#$#@#$#@
-1
+0
 @#$#@#$#@
