@@ -11,6 +11,7 @@ turtles-own [
 
 globals [
   states
+  state_functions
 ]
 
 
@@ -24,10 +25,11 @@ to setup
       [ set pcolor yellow ]
   ]
 
-
+  set state_functions table:make
   set states table:get (table:from-json-file "statechart.json") "states"
   foreach states [
     s ->
+
     ifelse (table:has-key? s "trigger_func")
     [
       let trigger_func table:get s "trigger_func"
@@ -37,6 +39,11 @@ to setup
       let trigger table:get s "trigger"
       table:put s "trigger" trigger
     ]
+    let name table:get s "state_name"
+    let trigger table:get s "trigger"
+    let next_state table:get s "next_state"
+    let function gen-func name trigger next_state
+    table:put state_functions name function
   ]
 
   create-turtles number [ __init__  ]
@@ -113,17 +120,18 @@ end
 
 
 ; turtle reporter
-to-report get_state [state_name]
-  report first filter [s -> table:get s "state_name" = state_name] states
+to-report get_state_function [state_name]
+  ;report first filter [s -> table:get s "state_name" = state_name] states
+  report table:get state_functions state_name
 end
 
 
 to update-current-state [state_name]
-  let next_state (get_state state_name)
-  let trigger table:get next_state "trigger"
-  let next_state_name table:get next_state "next_state"
-
-  set current_state gen-func state_name trigger next_state_name
+;  let next_state (get_state state_name)
+;  let trigger table:get next_state "trigger"
+;  let next_state_name table:get next_state "next_state"
+;  set current_state gen-func state_name trigger next_state_name
+  set current_state get_state_function state_name
   if show-logs? [
     set label state_name_of current_state
     show (word "enter state: " label ) ]
