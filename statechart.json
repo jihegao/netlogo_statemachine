@@ -3,33 +3,57 @@
     [
         {
             "state_name": "search-for-chip",
-            "trigger": "has-free-chip-here?",
-            "next_state": "pick-up-chip"
+            "transfer_conditions":[
+                {
+                    "trigger":"has-free-chip-here?",
+                    "next_state": "pick-up-chip"
+                }
+            ]
         },
         {
             "state_name": "pick-up-chip",
-            "trigger": "true",
-            "next_state": "find-new-pile"
+            "transfer_conditions":[
+                {
+                    "trigger_func":"\"time-after 10\"",
+                    "next_state": "find-new-pile"
+                }
+            ]
         },
         {
             "state_name": "find-new-pile",
-            "trigger": "pcolor = yellow",
-            "next_state": "find-place-to-put-down-chip"
+            "transfer_conditions":[
+                {
+                    "trigger":"pcolor = yellow",
+                    "next_state": "find-place-to-put-down-chip"
+                }
+            ]
         },
         {
             "state_name": "find-place-to-put-down-chip",
-            "trigger": "is-empty-here?",
-            "next_state": "put-down-chip"
+            "transfer_conditions":[
+                {
+                    "trigger":"is-empty-here?",
+                    "next_state": "put-down-chip"
+                }
+            ]
         },
         {
             "state_name": "put-down-chip",
-            "trigger": "true",
-            "next_state": "get-away"
+            "transfer_conditions":[
+                {
+                    "trigger":"\"time-after 10\"",
+                    "next_state": "get-away"
+                }
+            ]
         },
         {
             "state_name": "get-away",
-            "trigger": "pcolor = black",
-            "next_state": "search-for-chip"
+            "transfer_conditions":[
+                {
+                    "trigger":"pcolor = black",
+                    "next_state": "search-for-chip"
+                }
+            ]
         }
     ]
 }

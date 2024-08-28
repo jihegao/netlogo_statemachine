@@ -1,9 +1,10 @@
+;
+;
 __includes [ ]
 
 extensions [ table profiler ]
 
 turtles-own [
-  steps
   current_state
 ]
 
@@ -42,7 +43,7 @@ to setup
     let name table:get s "state_name"
     let trigger table:get s "trigger"
     let next_state table:get s "next_state"
-    let function gen-func name trigger next_state
+    let function gen-func name trigger next_state "action"
     table:put state_functions name function
   ]
 
@@ -61,12 +62,7 @@ end
 
 to go
   ask turtles [
-    ifelse steps > 0
-    [ set steps steps - 1 ]
-    [ execute-state
-      wiggle
-    ]
-    fd 1
+    execute-state
   ]
   tick
 end
@@ -78,6 +74,7 @@ end
 
 
 to search-for-chip   ;; turtle procedure
+  wiggle fd 1
 end
 
 to-report has-free-chip-here?
@@ -87,15 +84,14 @@ end
 to pick-up-chip     ;; "picks up chip" by turning orange
   set pcolor black
   set color orange
-  set steps 20
 end
 
 to find-new-pile  ;;  look for yellow patches
-
+  wiggle fd 1
 end
 
 to find-place-to-put-down-chip  ;; finds empty spot
-
+  wiggle fd 1
 end
 
 to-report is-empty-here?
@@ -105,11 +101,10 @@ end
 to put-down-chip  ;;   drops chip
   set pcolor yellow
   set color white
-  set steps 20
 end
 
 to get-away  ;;   get out of yellow pile
-  wiggle
+  wiggle fd 1
 end
 
 
@@ -137,16 +132,31 @@ to update-current-state [state_name]
     show (word "enter state: " label ) ]
 end
 
-to-report gen-func [ state_name trigger next_state_name ]
-  report (runresult (word
+
+to-report gen-func [ state_name action triggers next_state_name ]
+  report (runresult
+    (word
     "[ key -> "
-    "  ifelse-value ( key = \"trigger\" )[ " trigger " ]"
-    "  ["
-    "    ifelse-value (key = \"next_state\") [ \"" next_state_name "\" ] "
-    "    [ \""  state_name "\" ] "
-    "  ]"
-    "]"
-  ))
+    "  (ifelse-value "
+    "  ( key = \"trigger\" ) [ " triggers " ]"
+    "  ( key = \"next_state\") [\"" next_state_name "\" ]"
+    "  ( key = \"state_name\") [\"" state_name "\" ] "
+    "  ( key = \"action\") [ " action " ]"
+    "  )"
+    "]" )
+  )
+end
+
+
+to-report demo-func [ state_name action triggers next_state_name ]
+  report [ key ->
+    (ifelse-value
+      (key = "trigger") [ triggers ]
+      (key = "next_state") [ next_state_name ]
+      (key = "state_name") [ state_name ]
+      (key = "action") [ action ]
+    )
+  ]
 end
 
 ;;
